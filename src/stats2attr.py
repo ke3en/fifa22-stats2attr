@@ -434,11 +434,9 @@ def calc_composure(
 
 
 def calc_interceptions(
-        defending_overall_interceptions,
-        defending_overall_beaten_by_opponent
+        defending_overall_interceptions
 ):
     # インターセプトの基礎計算式
-    # インターセプト - 相手に抜かれた回数*0.6
     stats_item_interceptions_buf = defending_overall_interceptions
     logger.debug(f'インターセプト要素 {stats_item_interceptions_buf}')
 
@@ -780,7 +778,7 @@ def get_player_attr(player_stats_info: dict) -> dict:
             stats['shooting']['overall'].get('goals', 0),
             stats['shooting']['overall'].get('shots_on_target', 0),
             stats['shooting']['overall'].get('shots_off_target', 0),
-            stats['shooting']['overall'].get('shooting_overall_shots', 0)
+            stats['shooting']['overall'].get('shots', 0)
         ),
         'att_positioning': calc_att_positioning(
             stats['shooting']['overall'].get('shots_on_target', 0),
@@ -847,8 +845,7 @@ def get_player_attr(player_stats_info: dict) -> dict:
             stats['shooting']['types'].get('chip', 0)
         ),
         'interceptions': calc_interceptions(
-            stats['defending']['overall'].get('interceptions', 0),
-            stats['defending']['overall'].get('beaten_by_opponent', 0)
+            stats['defending']['overall'].get('interceptions', 0)
         ),
         'awareness': calc_awareness(
             stats['defending']['overall'].get('sliding_tackles_won', 0),
