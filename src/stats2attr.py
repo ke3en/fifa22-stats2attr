@@ -1011,8 +1011,8 @@ def get_player_ovr(attr: dict) -> dict:
             + attr["aggression"] * 0.03,
         'DM': attr["finishing"] * 0.03
             + attr["att_positioning"] * 0.03
-            + attr["AssertionErrorshort_passing"] * 0.09
-            + attr["AssertionErrorlong_passing"] * 0.09
+            + attr["short_passing"] * 0.09
+            + attr["long_passing"] * 0.09
             + attr["vision"] * 0.08
             + attr["crossing"] * 0.02
             + attr["agility"] * 0.05
