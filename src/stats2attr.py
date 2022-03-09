@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import logging
 import sys
@@ -900,14 +902,37 @@ def get_player_attr(player_stats_info: dict) -> dict:
     return result
 
 
+def get_player_ovr(attr: dict) -> dict:
+    return {
+        'WG': attr["finishing"] * 0.13
+              + attr["att_positioning"] * 0.1
+              + attr["short_passing"] * 0.05
+              + attr["long_passing"] * 0.02
+              + attr["vision"] * 0.03
+              + attr["crossing"] * 0.08
+              + attr["agility"] * 0.1
+              + attr["ball_control"] * 0.07
+              + attr["dribbling"] * 0.07
+              + attr["composure"] * 0.06
+              + attr["interceptions"] * 0.03
+              + attr["awareness"] * 0.01
+              + attr["standing_tackle"] * 0.03
+              + attr["sliding_tackle"] * 0.03
+              + attr["jump"] * 0.03
+              + attr["stamina"] * 0.08
+              + attr["strength"] * 0.04
+              + attr["aggression"] * 0.04,
+    }
+
+
 def main():
     logger.setLevel(logging.INFO)
     with open(sys.argv[1], 'r') as fp:
         player_stats_info_list = [player_stats_info for player_stats_info in json.load(fp) if
                                   player_stats_info['position_type'] == sys.argv[3]]
         player_attr_list = [get_player_attr(player_stats_info) for player_stats_info in player_stats_info_list]
-        logger.debug(json.dumps(player_attr_list, indent=2))
-    plt.hist([player_attr[sys.argv[2]] for player_attr in player_attr_list], range=[30, 99], bins=69)
+        player_ovr_list = [get_player_ovr(player_attr) for player_attr in player_attr_list]
+    plt.hist([player_ovr[sys.argv[2]] for player_ovr in player_ovr_list], range=[30, 99], bins=69)
     plt.show()
 
 
