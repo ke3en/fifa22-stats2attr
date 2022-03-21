@@ -10,289 +10,64 @@ import matplotlib.pyplot as plt
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
-
-def calc_finishing(
-        shooting_overall_goals,
-        shooting_overall_shots_on_target,
-        shooting_overall_shots_off_target,
-        shooting_overall_shots
-):
-    # 決定力の基礎計算式
-    # ゴール*9 - 枠内シュート*0.5 - 枠外シュート*3+1 -3 + 総シュート
-    stats_item_finishing_buf = shooting_overall_goals * 9 \
-                               - shooting_overall_shots_on_target * 0.5 \
-                               - shooting_overall_shots_off_target * 3 \
-                               + 1 \
-                               - 3 \
-                               + shooting_overall_shots
-    logger.debug(f'決定力要素 {stats_item_finishing_buf}')
-
-    stats_item_finishing_linear_func_x = [-10, 10]  # 第1成績調整
-    stats_item_finishing_linear_func_y = [30, 60]  # 第1可変レンジ
-    stats_item_finishing_linear_func_x2 = [1, 20]  # 第2成績調整
-    stats_item_finishing_linear_func_y2 = [0, 10]  # 第2可変レンジ 90～99用
-
-    x = stats_item_finishing_linear_func_x
-    y = stats_item_finishing_linear_func_y
-    slope, intercept = np.polyfit(x, y, 1)
-    stats_item_finishing = 30 + slope * stats_item_finishing_buf + intercept
-    # print(stats_item_finishing)
-
-    if stats_item_finishing > 90:
-        x = stats_item_finishing_linear_func_x2
-        y = stats_item_finishing_linear_func_y2
-        slope, intercept = np.polyfit(x, y, 1)
-        stats_item_finishing = stats_item_finishing - 90
-        stats_item_finishing = slope * stats_item_finishing + intercept
-        stats_item_finishing = stats_item_finishing + 90
-
-    stats_item_finishing = round(stats_item_finishing)
-    stats_item_finishing = np.clip(stats_item_finishing, 30, 99)
-    logger.debug(f'決定力 {stats_item_finishing}')
-
-    return int(stats_item_finishing)
+# (0, 0), (50, 80), (100, 99)の3点を通る二次関数の係数
+a = np.polyfit(x=[0, 50, 100], y=[0, 80, 99], deg=2)
 
 
-def calc_att_positioning(
-        shooting_overall_shots_on_target,
-        defending_overall_air_duels_won
-):
-    # 攻撃_ポジショニングの基礎計算式
-    # 枠内シュート数 +  空中戦勝利*1.5
-    stats_item_att_positioning_buf = shooting_overall_shots_on_target \
-                                     + defending_overall_air_duels_won * 1.5
-    logger.debug(f'攻撃_ポジショニング要素 {stats_item_att_positioning_buf}')
-
-    stats_item_att_positioning_linear_func_x = [0, 7]  # 第1成績調整
-    stats_item_att_positioning_linear_func_y = [30, 60]  # 第1可変レンジ
-    stats_item_att_positioning_linear_func_x2 = [0, 20]  # 第2成績調整
-    stats_item_att_positioning_linear_func_y2 = [0, 10]  # 第2可変レンジ 90～99用
-
-    x = stats_item_att_positioning_linear_func_x
-    y = stats_item_att_positioning_linear_func_y
-    slope, intercept = np.polyfit(x, y, 1)
-    stats_item_att_positioning = 30 + slope * stats_item_att_positioning_buf + intercept
-    # print(stats_item_att_positioning)
-
-    if stats_item_att_positioning > 90:
-        x = stats_item_att_positioning_linear_func_x2
-        y = stats_item_att_positioning_linear_func_y2
-        slope, intercept = np.polyfit(x, y, 1)
-        stats_item_att_positioning = stats_item_att_positioning - 90
-        stats_item_att_positioning = slope * stats_item_att_positioning + intercept
-        stats_item_att_positioning = stats_item_att_positioning + 90
-
-    stats_item_att_positioning = round(stats_item_att_positioning)
-    stats_item_att_positioning = np.clip(stats_item_att_positioning, 30, 99)
-    logger.debug(f'攻撃_ポジショニング {stats_item_att_positioning}')
-
-    return int(stats_item_att_positioning)
+def calc(x):
+    x_clip = np.clip(x, 0, 100)
+    y = a[0] * x_clip * x_clip + a[1] * x_clip + a[2]
+    return np.clip(round(y), 0, 99)
 
 
-def calc_shortpass(
-        passing_types_ground,
-        passing_types_through,
-        passing_overall_intercepted,
-        passing_overall_assists
-):
-    # ショートパスの基礎計算式
-    # グラウンダーパス + スルーパス*1.2 - パス失敗*0.5 + アシスト*5
-    stats_item_shortpass_buf = passing_types_ground + \
-                               passing_types_through * 1.2 \
-                               - passing_overall_intercepted * 0.5 \
-                               + passing_overall_assists * 5
-    logger.debug(f'ショートパス要素 {stats_item_shortpass_buf}')
-
-    stats_item_shortpass_linear_func_x = [1, 18]  # 第1成績調整
-    stats_item_shortpass_linear_func_y = [30, 60]  # 第1可変レンジ
-    stats_item_shortpass_linear_func_x2 = [1, 30]  # 第2成績調整
-    stats_item_shortpass_linear_func_y2 = [0, 10]  # 第2可変レンジ 90～99用
-
-    x = stats_item_shortpass_linear_func_x
-    y = stats_item_shortpass_linear_func_y
-    slope, intercept = np.polyfit(x, y, 1)
-    stats_item_shortpass = 30 + slope * stats_item_shortpass_buf + intercept
-    # print(stats_item_shortpass)
-
-    if stats_item_shortpass > 90:
-        x = stats_item_shortpass_linear_func_x2
-        y = stats_item_shortpass_linear_func_y2
-        slope, intercept = np.polyfit(x, y, 1)
-        stats_item_shortpass = stats_item_shortpass - 90
-        stats_item_shortpass = slope * stats_item_shortpass + intercept
-        stats_item_shortpass = stats_item_shortpass + 90
-
-    stats_item_shortpass = round(stats_item_shortpass)
-    stats_item_shortpass = np.clip(stats_item_shortpass, 30, 99)
-    logger.debug(f'ショートパス {stats_item_shortpass}')
-
-    return int(stats_item_shortpass)
+def calc_finishing(stats):
+    # 決定力
+    # 決定機で確実にゴールを決める能力。
+    x = 40 \
+        + (stats['shooting']['overall'].get('goals', 0) - 0.2) * 60 \
+        + (stats['shooting']['overall'].get('shots_on_target', 0) - 1) * 20 \
+        + stats['shooting']['overall'].get('shots_off_target', 0) * (-20)
+    return calc(x)
 
 
-def calc_longpass(
-        passing_types_lob,
-        passing_types_lofted_through,
-        passing_overall_intercepted,
-        passing_overall_assists,
-        passing_types_set_pieces,
-        passing_types_cross
-):
-    # ロングパスの基礎計算式
-    # ロブパス + ロブスルーパス*1.2 - パス失敗*0.5 + アシスト*3 + セットプレーパス + クロス*1.5
-    stats_item_longpass_buf = passing_types_lob \
-                              + passing_types_lofted_through * 1.2 \
-                              - passing_overall_intercepted * 0.5 \
-                              + passing_overall_assists * 3 \
-                              + passing_types_set_pieces \
-                              + passing_types_cross * 1.5
-    logger.debug(f'ロングパス要素 {stats_item_longpass_buf}')
-
-    stats_item_longpass_linear_func_x = [1, 18]  # 第1成績調整
-    stats_item_longpass_linear_func_y = [30, 60]  # 第1可変レンジ
-    stats_item_longpass_linear_func_x2 = [1, 18]  # 第2成績調整
-    stats_item_longpass_linear_func_y2 = [0, 10]  # 第2可変レンジ 90～99用
-
-    x = stats_item_longpass_linear_func_x
-    y = stats_item_longpass_linear_func_y
-    slope, intercept = np.polyfit(x, y, 1)
-    stats_item_longpass = 30 + slope * stats_item_longpass_buf + intercept
-    # print(stats_item_longpass)
-
-    if stats_item_longpass > 90:
-        x = stats_item_longpass_linear_func_x2
-        y = stats_item_longpass_linear_func_y2
-        slope, intercept = np.polyfit(x, y, 1)
-        stats_item_longpass = stats_item_longpass - 90
-        stats_item_longpass = slope * stats_item_longpass + intercept
-        stats_item_longpass = stats_item_longpass + 90
-
-    stats_item_longpass = round(stats_item_longpass)
-    stats_item_longpass = np.clip(stats_item_longpass, 30, 99)
-    logger.debug(f'ロングパス {stats_item_longpass}')
-
-    return int(stats_item_longpass)
+def calc_att_positioning(stats):
+    # 攻撃ポジショニング
+    # ゴール前でボールを受けて決定機を作るオフザボールの能力。
+    x = 40 + \
+        + (stats['shooting']['overall'].get('expected_goals', 0) - 0.5) * 50 \
+        + (stats['shooting']['overall'].get('shots', 0) - 1.5) * 5 \
+        + (stats['shooting']['overall'].get('shots_on_target', 0) - 1) * 5
+    return calc(x)
 
 
-def calc_vision(
-        passing_overall_completed,
-        passing_overall_passes,
-        passing_overall_assists
-):
-    # 視野の基礎計算式
-    # パス成功 / 総パス数 *10 ) - 10 + アシスト*2.3 + パス総数*0.5
-    stats_item_vision_buf = -10 \
-                            + passing_overall_assists * 2.3 \
-                            + passing_overall_completed * 0.5
-    if passing_overall_passes > 0:
-        stats_item_vision_buf += passing_overall_completed / passing_overall_passes * 10
-    logger.debug(f'視野要素 {stats_item_vision_buf}')
-
-    stats_item_vision_linear_func_x = [0, 8]  # 第1成績調整
-    stats_item_vision_linear_func_y = [30, 60]  # 第1可変レンジ
-    stats_item_vision_linear_func_x2 = [0, 30]  # 第2成績調整
-    stats_item_vision_linear_func_y2 = [0, 10]  # 第2可変レンジ 90～99用
-
-    x = stats_item_vision_linear_func_x
-    y = stats_item_vision_linear_func_y
-    slope, intercept = np.polyfit(x, y, 1)
-    stats_item_vision = 30 + slope * stats_item_vision_buf + intercept
-    # print(stats_item_vision)
-
-    if stats_item_vision > 90:
-        x = stats_item_vision_linear_func_x2
-        y = stats_item_vision_linear_func_y2
-        slope, intercept = np.polyfit(x, y, 1)
-        stats_item_vision = stats_item_vision - 90
-        stats_item_vision = slope * stats_item_vision + intercept
-        stats_item_vision = stats_item_vision + 90
-
-    stats_item_vision = round(stats_item_vision)
-    stats_item_vision = np.clip(stats_item_vision, 30, 99)
-    logger.debug(f'視野 {stats_item_vision}')
-
-    return int(stats_item_vision)
+def calc_passing(stats):
+    # パス
+    # パスを正確さ。
+    # 30 + (パス成功率-0.7)/0.3*20 + パス成功
+    x = 40 \
+        + (stats['passing']['overall'].get('completed', 0) - 9) * 5 \
+        + (stats['passing']['overall'].get('completed', 0) / stats['passing']['overall'].get('passes', 1) - 0.8) * 120
+    return calc(x)
 
 
-def calc_cross(
-        passing_overall_expected_assists,
-        passing_types_cross
-):
-    # クロスの基礎計算式
-    # 予測アシスト + クロス成功数*0.7
-    stats_item_cross_buf = passing_overall_expected_assists \
-                           + passing_types_cross * 0.7
-    logger.debug(f'クロス要素 {stats_item_cross_buf}')
-
-    stats_item_cross_linear_func_x = [0, 2.5]  # 第1成績調整
-    stats_item_cross_linear_func_y = [30, 60]  # 第1可変レンジ
-    stats_item_cross_linear_func_x2 = [0, 23]  # 第2成績調整
-    stats_item_cross_linear_func_y2 = [0, 10]  # 第2可変レンジ 90～99用
-
-    x = stats_item_cross_linear_func_x
-    y = stats_item_cross_linear_func_y
-    slope, intercept = np.polyfit(x, y, 1)
-    stats_item_cross = 30 + slope * stats_item_cross_buf + intercept
-    # print(stats_item_cross)
-
-    if stats_item_cross > 90:
-        x = stats_item_cross_linear_func_x2
-        y = stats_item_cross_linear_func_y2
-        slope, intercept = np.polyfit(x, y, 1)
-        stats_item_cross = stats_item_cross - 90
-        stats_item_cross = slope * stats_item_cross + intercept
-        stats_item_cross = stats_item_cross + 90
-
-    stats_item_cross = round(stats_item_cross)
-    stats_item_cross = np.clip(stats_item_cross, 30, 99)
-    logger.debug(f'クロス {stats_item_cross}')
-
-    return int(stats_item_cross)
+def calc_vision(stats):
+    # 視野
+    # 敵味方の位置を把握し、決定機に繋がるパスをする能力。
+    x = 40 + \
+        + (stats['passing']['overall'].get('assists', 0) - 0.2) * 30 \
+        + (stats['passing']['overall'].get('expected_assists', 0) - 0.2) * 30 \
+        + ((stats['passing']['types'].get('through', 0) + stats['passing']['types'].get('lofted_through', 0)) * (stats['passing']['overall'].get('completed', 0) / stats['passing']['overall'].get('passes', 1)) - 2) * 5 \
+        + stats['passing']['overall'].get('intercepted', 0) * (-5) \
+        + stats['passing']['overall'].get('offside_passes', 0) * (-3)
+    return calc(x)
 
 
-def calc_agility(
-        summary_distance_sprinted,
-        possession_overall_regular_dribble,
-        possession_overall_strafe_dribble,
-        possession_overall_shield_dribble,
-        possession_types_knock_ons,
-        possession_types_skillmove_beat,
-        possession_types_nutmeg
-):
-    # 敏捷値の基礎計算式
-    # スプリント/3 + 通常ドリブル/90 + ストレイフ/2 + シールドドリ /2 + ノックオン*0.7 + スキム突破 + ナツメグ*3
-    stats_item_agility_buf = summary_distance_sprinted / 3 \
-                             + possession_overall_regular_dribble / 90 \
-                             + possession_overall_strafe_dribble / 2 \
-                             + possession_overall_shield_dribble / 2 \
-                             + possession_types_knock_ons * 0.7 \
-                             + possession_types_skillmove_beat \
-                             + possession_types_nutmeg * 3
-    logger.debug(f'敏捷値要素 {stats_item_agility_buf}')
-
-    stats_item_agility_linear_func_x = [0, 15]  # 第1成績調整
-    stats_item_agility_linear_func_y = [30, 60]  # 第1可変レンジ
-    stats_item_agility_linear_func_x2 = [0, 35]  # 第2成績調整
-    stats_item_agility_linear_func_y2 = [0, 10]  # 第2可変レンジ 90～99用
-
-    x = stats_item_agility_linear_func_x
-    y = stats_item_agility_linear_func_y
-    slope, intercept = np.polyfit(x, y, 1)
-    stats_item_agility = 30 + slope * stats_item_agility_buf + intercept
-    # print(stats_item_agility)
-
-    if stats_item_agility > 90:
-        x = stats_item_agility_linear_func_x2
-        y = stats_item_agility_linear_func_y2
-        slope, intercept = np.polyfit(x, y, 1)
-        stats_item_agility = stats_item_agility - 90
-        stats_item_agility = slope * stats_item_agility + intercept
-        stats_item_agility = stats_item_agility + 90
-
-    stats_item_agility = round(stats_item_agility)
-    stats_item_agility = np.clip(stats_item_agility, 30, 99)
-    logger.debug(f'敏捷値 {stats_item_agility}')
-
-    return int(stats_item_agility)
+def calc_cross(stats):
+    # クロス
+    # クロスの正確さ
+    x = 40 + \
+        + (stats['passing']['types'].get('cross', 0) * (stats['passing']['overall'].get('completed', 0) / stats['passing']['overall'].get('passes', 1)) - 0.5) * 20
+    return calc(x)
 
 
 def calc_ball_control(
@@ -302,35 +77,9 @@ def calc_ball_control(
 ):
     # ボールコントロールの基礎計算式
     # ポゼッション + ドリブル成功率*10
-    stats_item_ball_control_buf = possession_overall_possession
-    if possession_overall_dribbles > 0:
-        stats_item_ball_control_buf += possession_overall_dribbles_completed / possession_overall_dribbles * 10
-    logger.debug(f'ボールコントロール要素 {stats_item_ball_control_buf}')
-
-    stats_item_ball_control_linear_func_x = [0, 15]  # 第1成績調整
-    stats_item_ball_control_linear_func_y = [30, 60]  # 第1可変レンジ
-    stats_item_ball_control_linear_func_x2 = [0, 23]  # 第2成績調整
-    stats_item_ball_control_linear_func_y2 = [0, 10]  # 第2可変レンジ 90～99用
-
-    x = stats_item_ball_control_linear_func_x
-    y = stats_item_ball_control_linear_func_y
-    slope, intercept = np.polyfit(x, y, 1)
-    stats_item_ball_control = 30 + slope * stats_item_ball_control_buf + intercept
-    # print(stats_item_ball_control)
-
-    if stats_item_ball_control > 90:
-        x = stats_item_ball_control_linear_func_x2
-        y = stats_item_ball_control_linear_func_y2
-        slope, intercept = np.polyfit(x, y, 1)
-        stats_item_ball_control = stats_item_ball_control - 90
-        stats_item_ball_control = slope * stats_item_ball_control + intercept
-        stats_item_ball_control = stats_item_ball_control + 90
-
-    stats_item_ball_control = round(stats_item_ball_control)
-    stats_item_ball_control = np.clip(stats_item_ball_control, 30, 99)
-    logger.debug(f'ボールコントロール {stats_item_ball_control}')
-
-    return int(stats_item_ball_control)
+    x = 40 + \
+        + (stats['possession']['overall'].get('cross', 0) * (stats['passing']['overall'].get('completed', 0) / stats['passing']['overall'].get('passes', 1)) - 0.5) * 20
+    return calc(x)
 
 
 def calc_dribble(
@@ -1087,12 +836,108 @@ def get_player_ovr(attr: dict) -> dict:
 def main():
     logger.setLevel(logging.INFO)
     with open(sys.argv[1], 'r') as fp:
-        player_stats_info_list = [player_stats_info for player_stats_info in json.load(fp) if
-                                  player_stats_info['position_type'] == sys.argv[3]]
-        player_attr_list = [get_player_attr(player_stats_info) for player_stats_info in player_stats_info_list]
-        player_ovr_list = [get_player_ovr(player_attr) for player_attr in player_attr_list]
-    plt.hist([player_ovr[sys.argv[2]] for player_ovr in player_ovr_list], range=[30, 99], bins=69)
+        player_stats_info_list = json.load(fp)
+        # player_attr_list = [get_player_attr(player_stats_info) for player_stats_info in player_stats_info_list]
+        # player_ovr_list = [get_player_ovr(player_attr) for player_attr in player_attr_list]
+    # plt.hist([player_ovr[sys.argv[2]] for player_ovr in player_ovr_list], range=[30, 99], bins=69)
+
+    player_stats_info_list = ave(player_stats_info_list)
+    position_types = [
+        "ST",
+        "FW",
+        "WG",
+        "SMF",
+        "CAM",
+        "CM",
+        "DM",
+        "SB",
+        "CB",
+        "GK",
+    ]
+
+    fig, axes = plt.subplots(nrows=2, ncols=5, figsize=(24.0, 12.0))
+    for idx, ax in enumerate(axes.ravel()):
+        position_type = position_types[idx]
+        d = [
+                player_stats_info['stats']['possession']['overall'].get('possession', 0)
+                # calc_cross(player_stats_info['stats'])
+                for player_stats_info in player_stats_info_list if player_stats_info['position_type'] == position_type
+            ]
+        print("{}:\tAve {} Med {} Max {}".format(position_type, np.round(np.mean(d), 1), np.round(np.median(d), 1), np.round(np.max(d), 1)))
+        ax.hist(
+            d,
+            range=[0, 100],
+            bins=100
+        )
+        ax.set_title(position_type)
+    plt.tight_layout()
     plt.show()
+
+
+def ave(player_stats_info_list):
+    return [
+        {
+            **player_stats_info,
+            'position_type': max(player_stats_info['position_type'], key=player_stats_info['position_type'].get),
+            'stats': {
+                "shooting": {
+                    "types": {
+                        k: v / np.sum(list(player_stats_info['position_type'].values()))
+                        for k, v in player_stats_info['stats']['shooting']['types'].items()
+                    },
+                    "overall": {
+                        k: v / np.sum(list(player_stats_info['position_type'].values()))
+                        for k, v in player_stats_info['stats']['shooting']['overall'].items()
+                    },
+                },
+                "passing": {
+                    "types": {
+                        k: v / np.sum(list(player_stats_info['position_type'].values()))
+                        for k, v in player_stats_info['stats']['passing']['types'].items()
+                    },
+                    "overall": {
+                        k: v / np.sum(list(player_stats_info['position_type'].values()))
+                        for k, v in player_stats_info['stats']['passing']['overall'].items()
+                    },
+                },
+                "summary": {
+                    k: v / np.sum(list(player_stats_info['position_type'].values()))
+                    for k, v in player_stats_info['stats']['summary'].items()
+                },
+                "goalkeeping": {
+                    "types": {
+                        k: v / np.sum(list(player_stats_info['position_type'].values()))
+                        for k, v in player_stats_info['stats']['goalkeeping']['types'].items()
+                    },
+                    "overall": {
+                        k: v / np.sum(list(player_stats_info['position_type'].values()))
+                        for k, v in player_stats_info['stats']['goalkeeping']['overall'].items()
+                    },
+                },
+                "defending": {
+                    "infractions": {
+                        k: v / np.sum(list(player_stats_info['position_type'].values()))
+                        for k, v in player_stats_info['stats']['defending']['infractions'].items()
+                    },
+                    "overall": {
+                        k: v / np.sum(list(player_stats_info['position_type'].values()))
+                        for k, v in player_stats_info['stats']['defending']['overall'].items()
+                    },
+                },
+                "possession": {
+                    "types": {
+                        k: v / np.sum(list(player_stats_info['position_type'].values()))
+                        for k, v in player_stats_info['stats']['possession']['types'].items()
+                    },
+                    "overall": {
+                        k: v / np.sum(list(player_stats_info['position_type'].values()))
+                        for k, v in player_stats_info['stats']['possession']['overall'].items()
+                    },
+                }
+            }
+        }
+        for player_stats_info in player_stats_info_list if 'position_type' in player_stats_info
+    ]
 
 
 if __name__ == '__main__':
