@@ -6,6 +6,7 @@ import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
+import requests
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -1089,10 +1090,16 @@ def main():
     with open(sys.argv[1], 'r') as fp:
         player_stats_info_list = [player_stats_info for player_stats_info in json.load(fp) if
                                   player_stats_info['position_type'] == sys.argv[3]]
-        player_attr_list = [get_player_attr(player_stats_info) for player_stats_info in player_stats_info_list]
-        player_ovr_list = [get_player_ovr(player_attr) for player_attr in player_attr_list]
-    plt.hist([player_ovr[sys.argv[2]] for player_ovr in player_ovr_list], range=[30, 99], bins=69)
-    plt.show()
+        response = requests.post(
+            "https://asia-northeast1-my-virtual-pro.cloudfunctions.net/stats2attr",
+            json=player_stats_info_list[0]
+        )
+        res_data = response.json()
+        print(res_data)
+        #player_attr_list = [get_player_attr(player_stats_info) for player_stats_info in player_stats_info_list]
+        #player_ovr_list = [get_player_ovr(player_attr) for player_attr in player_attr_list]
+    #plt.hist([player_ovr[sys.argv[2]] for player_ovr in player_ovr_list], range=[30, 99], bins=69)
+    #plt.show()
 
 
 if __name__ == '__main__':
